@@ -699,8 +699,8 @@ const getContestById = async (req, res) => {
             });
         }
 
-        const isRegistered = userId ? contest.participants.some(
-            p => p.user._id.toString() === userId.toString()
+        const isRegistered = (userId && contest.participants) ? contest.participants.some(
+            p => (p?.user?._id?.toString() === userId.toString()) || (p?.user?.toString() === userId.toString())
         ) : false;
 
         let userSubmissions = [];
@@ -711,12 +711,15 @@ const getContestById = async (req, res) => {
             }).populate('problemId', 'title');
         }
 
+        const validParticipants = (contest.participants || []).filter(p => p && p.user);
+
         res.status(200).json({
             success: true,
             contest: {
                 ...contest.toObject(),
+                participants: validParticipants,
                 isRegistered,
-                participantCount: contest.participants.length,
+                participantCount: validParticipants.length,
                 userSubmissions
             }
         });
@@ -746,8 +749,8 @@ const getContestProblems = async (req, res) => {
             });
         }
 
-        const isRegistered = contest.participants.some(
-            p => p.user.toString() === userId.toString()
+        const isRegistered = (contest.participants || []).some(
+            p => (p?.user?._id?.toString() === userId.toString()) || (p?.user?.toString() === userId.toString())
         );
 
         const isActive = contest.status === 'active';
