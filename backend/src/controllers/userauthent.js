@@ -137,25 +137,33 @@ const login = async (req, res) => {
         res.status(400).json({ error: err.message || 'Invalid credentials' });
     }
 }
+const client = require('../config/redis');
+
 const logout = async (req, res) => {
     try {
         const { token } = req.cookies;
-        if (!token) {
-            throw new Error('No token found');
+        if (token) {
+            try {
+                const payload = jwt.decode(token);
+                if (payload && payload.exp) {
+                    const ttlSeconds = Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
+                    if (ttlSeconds > 0) {
+                        await client.set(`token:${token}`, 'blocked', { EX: ttlSeconds });
+                    }
+                }
+            } catch (redisErr) {
+                console.log('⚠️ Redis blacklist warning:', redisErr.message);
+            }
         }
-        const payload = jwt.decode(token);
-        // await client.set(`token:${token}`, 'blocked');
-        // const ttlSeconds = Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
-        // await client.expire(`token:${token}`, ttlSeconds);
         res.cookie('token', '', {
             expires: new Date(Date.now()),
             httpOnly: true,
             sameSite: 'lax'
         });
-        res.send('Logged out successfully');
+        res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
         console.error('Logout error:', err);
-        res.status(500).send('Error: ' + err.message);
+        res.status(500).json({ error: err.message || 'Logout error' });
     }
 }
 const adminregister = async (req, res) => {

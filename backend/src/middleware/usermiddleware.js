@@ -1,6 +1,6 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-// const { client } = require('../config/redis'); // ← Redis commented out
+const client = require('../config/redis');
 
 const usermiddleware = async (req, res, next) => {
     try {
@@ -10,6 +10,19 @@ const usermiddleware = async (req, res, next) => {
                 success: false,
                 message: "No token provided"
             });
+        }
+
+        // Redis check for blacklisted tokens
+        try {
+            const blocked = await client.get(`token:${token}`);
+            if (blocked) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Token is invalid or logged out"
+                });
+            }
+        } catch (redisErr) {
+            console.log('⚠️ Redis auth check warning (bypassing):', redisErr.message);
         }
 
         const verify = jwt.verify(token, process.env.JWT_KEY);
@@ -29,15 +42,6 @@ const usermiddleware = async (req, res, next) => {
                 message: "User does not exist"
             });
         }
-
-        // Redis check commented out
-        // const blocked = await client.get(`token:${token}`);
-        // if (blocked) {
-        //     return res.status(401).json({
-        //         success: false,
-        //         message: "Token is invalid or expired"
-        //     });
-        // }
 
         req.user = user;
         next();
