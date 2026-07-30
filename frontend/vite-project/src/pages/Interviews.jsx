@@ -44,6 +44,18 @@ function Interviews() {
     navigate(`/interview/${id}`);
   };
 
+  const handleEndInterviewFromList = async (e, interviewId) => {
+    e.stopPropagation();
+    if (!window.confirm('End this interview session and generate your AI performance evaluation scorecard?')) return;
+    try {
+      await axiosclient.post(`/interview/${interviewId}/submit`);
+      fetchInterviews();
+    } catch (err) {
+      console.error('End interview from list error:', err);
+      alert(err.response?.data?.message || 'Failed to end interview');
+    }
+  };
+
   const getRoleIcon = (role) => {
     switch (role) {
       case 'software_developer': return <Code className="w-4 h-4" />;
@@ -243,10 +255,24 @@ function Interviews() {
                         )}
                       </div>
                     </div>
-                    <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition flex items-center gap-2 text-sm whitespace-nowrap">
-                      {interview.status === 'in_progress' ? 'Continue' : 'View Details'}
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {interview.status === 'in_progress' && (
+                        <button
+                          onClick={(e) => handleEndInterviewFromList(e, interview._id)}
+                          className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition text-xs font-semibold whitespace-nowrap shadow-sm"
+                          title="End interview & calculate score"
+                        >
+                          End Interview
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => handleViewInterview(interview._id)}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition flex items-center gap-2 text-sm whitespace-nowrap shadow-sm font-medium"
+                      >
+                        {interview.status === 'in_progress' ? 'Continue' : 'View Details'}
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

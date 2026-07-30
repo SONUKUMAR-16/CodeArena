@@ -493,10 +493,25 @@ function AIInterview() {
                     <button
                       onClick={() => handleSendMessage(message)}
                       disabled={!message.trim() || isRecording}
-                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm shadow-md"
+                      className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm shadow-md"
                     >
                       <Send className="w-4 h-4" />
                       Send
+                    </button>
+
+                    {/* End Interview Button */}
+                    <button
+                      onClick={handleEndInterview}
+                      disabled={isSubmitting}
+                      className="px-5 py-3 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-semibold rounded-xl transition flex items-center gap-2 text-sm shadow-md whitespace-nowrap disabled:opacity-50"
+                      title="End interview and calculate AI score"
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Flag className="w-4 h-4" />
+                      )}
+                      End Interview
                     </button>
                   </div>
                   
