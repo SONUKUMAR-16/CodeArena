@@ -31,7 +31,7 @@ const register = async (req, res) => {
         req.body.role = "user";
         const user = await User.create(req.body);
         const token = jwt.sign({ _id: user._id, emailid: emailid, role: 'user' }, process.env.JWT_KEY, { expiresIn: 7 * 24 * 60 * 60 });
-        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'none', secure: true });
 
         // ADD ROLE HERE ↓
         const reply = {
@@ -151,7 +151,7 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign({ _id: user._id, emailid: emailid, role: user.role }, process.env.JWT_KEY, { expiresIn: 7 * 24 * 60 * 60 });
-        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'none', secure: true });
 
         const reply = {
             firstname: user.firstname,
@@ -191,7 +191,8 @@ const logout = async (req, res) => {
         res.cookie('token', '', {
             expires: new Date(Date.now()),
             httpOnly: true,
-            sameSite: 'lax'
+            sameSite: 'none',
+            secure: true
         });
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
@@ -209,7 +210,7 @@ const adminregister = async (req, res) => {
             throw new Error("emaild exists");
         const user = await User.create(req.body);
         const token = jwt.sign({ _id: user._id, emailid: emailid, role: 'admin' }, process.env.JWT_KEY, { expiresIn: 7 * 24 * 60 * 60 });
-        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'none', secure: true });
         res.status(201).send('user registered succesfully')
     }
     catch (err) {
@@ -320,7 +321,7 @@ const resetPassword = async (req, res) => {
         await user.save();
 
         const token = jwt.sign({ _id: user._id, emailid: emailid, role: user.role }, process.env.JWT_KEY, { expiresIn: 7 * 24 * 60 * 60 });
-        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'none', secure: true });
 
         const reply = {
             firstname: user.firstname,
