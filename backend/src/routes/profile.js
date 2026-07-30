@@ -11,11 +11,21 @@ const {
 profileRouter.get('/test/:username', async (req, res) => {
     try {
         const User = require('../models/user');
-        const user = await User.findOne({ firstname: req.params.username });
+        const rawUsername = decodeURIComponent(req.params.username).trim();
+        const escaped = rawUsername.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        const regex = new RegExp(`^${escaped}\\s*$`, 'i');
+        const user = await User.findOne({
+            $or: [
+                { firstname: rawUsername },
+                { firstname: regex },
+                { emailid: rawUsername },
+                { emailid: regex }
+            ]
+        });
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
-        res.json({ success: true, user: { firstname: user.firstname, email: user.emailid } });
+        res.json({ success: true, user: { firstname: user.firstname, email: user.emailid, role: user.role } });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

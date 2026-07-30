@@ -9,13 +9,14 @@ const getProfile = async (req, res) => {
         
         // Check if username is provided
         if (req.params.username) {
-            const escaped = req.params.username.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-            const regex = new RegExp(`^${escaped}$`, 'i');
+            const rawUsername = decodeURIComponent(req.params.username).trim();
+            const escaped = rawUsername.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+            const regex = new RegExp(`^${escaped}\\s*$`, 'i');
             user = await User.findOne({
                 $or: [
-                    { firstname: req.params.username },
+                    { firstname: rawUsername },
                     { firstname: regex },
-                    { emailid: req.params.username },
+                    { emailid: rawUsername },
                     { emailid: regex }
                 ]
             });
