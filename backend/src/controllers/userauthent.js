@@ -113,9 +113,16 @@ const login = async (req, res) => {
         }
 
         const cleanEmail = emailid.trim().toLowerCase();
+        const escapedEmail = cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 
-        const user = await User.findOne({ emailid: cleanEmail }) || 
-                     await User.findOne({ emailid: { $regex: new RegExp(`^${cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i') } });
+        const user = await User.findOne({
+            $or: [
+                { emailid: cleanEmail },
+                { emailid: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } },
+                { email: cleanEmail },
+                { email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } }
+            ]
+        });
 
         if (!user) {
             console.log(`❌ Login failed: User with email '${cleanEmail}' not found in database`);
@@ -211,9 +218,18 @@ const sendForgotPasswordOtp = async (req, res) => {
     try {
         let { emailid } = req.body;
         if (!emailid) return res.status(400).json({ error: "Email is required" });
-        emailid = emailid.trim().toLowerCase();
+        const cleanEmail = emailid.trim().toLowerCase();
+        const escapedEmail = cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 
-        const user = await User.findOne({ emailid });
+        const user = await User.findOne({
+            $or: [
+                { emailid: cleanEmail },
+                { emailid: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } },
+                { email: cleanEmail },
+                { email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } }
+            ]
+        });
+
         if (!user) {
             return res.status(404).json({ error: "User does not exist with this email" });
         }
@@ -221,14 +237,14 @@ const sendForgotPasswordOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await OTP.create({
-            email: emailid,
+            email: cleanEmail,
             otp: otp
         });
 
         const title = "Password Reset OTP - Code Arena";
         const body = `<h1>Reset Password</h1><p>Your OTP for resetting your password is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
 
-        await mailSender(emailid, title, body);
+        await mailSender(cleanEmail, title, body);
 
         res.status(200).json({
             success: true,
@@ -247,9 +263,18 @@ const resetPassword = async (req, res) => {
             return res.status(400).json({ error: "Email, OTP, and new password are required" });
         }
 
-        emailid = emailid.trim().toLowerCase();
+        const cleanEmail = emailid.trim().toLowerCase();
+        const escapedEmail = cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 
-        const user = await User.findOne({ emailid });
+        const user = await User.findOne({
+            $or: [
+                { emailid: cleanEmail },
+                { emailid: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } },
+                { email: cleanEmail },
+                { email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } }
+            ]
+        });
+
         if (!user) {
             return res.status(404).json({ error: "User does not exist with this email" });
         }
