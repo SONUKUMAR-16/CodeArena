@@ -52,12 +52,26 @@ function Login() {
         {error && (
           <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-300 rounded-lg text-sm flex flex-col gap-2">
             <span>{typeof error === 'string' ? error : error?.error || JSON.stringify(error)}</span>
-            <Link
-              to="/forgot-password"
-              className="text-xs font-semibold text-white bg-red-700 hover:bg-red-600 py-1.5 px-3 rounded w-fit transition flex items-center gap-1"
-            >
-              🔑 Forgot Password? Reset via OTP
-            </Link>
+            
+            {/* If password is incorrect -> Show Forgot Password button */}
+            {(typeof error === 'string' && (error.toLowerCase().includes('incorrect password') || error.toLowerCase().includes('password'))) && (
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-white bg-red-700 hover:bg-red-600 py-1.5 px-3 rounded w-fit transition flex items-center gap-1 shadow"
+              >
+                🔑 Forgot Password? Reset via OTP
+              </Link>
+            )}
+
+            {/* If user does not exist -> Show Sign Up button */}
+            {(typeof error === 'string' && (error.toLowerCase().includes('user does not exist') || error.toLowerCase().includes('not exist'))) && (
+              <Link
+                to="/signup"
+                className="text-xs font-semibold text-white bg-green-700 hover:bg-green-600 py-1.5 px-3 rounded w-fit transition flex items-center gap-1 shadow"
+              >
+                ✨ User not found. Create an Account
+              </Link>
+            )}
           </div>
         )}
 
