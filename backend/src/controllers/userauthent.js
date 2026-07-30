@@ -107,33 +107,44 @@ const verifyOtp = async (req, res) => {
 }
 const login = async (req, res) => {
     try {
-        const { emailid, password } = req.body;
-        if (!emailid)
-            throw new Error('invalid credential');
-        if (!password)
-            throw new Error('invalid credential');
-        const user = await User.findOne({ emailid });
-        if (!user) throw new Error("invalid credential");
+        let { emailid, password } = req.body;
+        if (!emailid || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
+
+        const cleanEmail = emailid.trim().toLowerCase();
+
+        const user = await User.findOne({ emailid: cleanEmail }) || 
+                     await User.findOne({ emailid: { $regex: new RegExp(`^${cleanEmail.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i') } });
+
+        if (!user) {
+            console.log(`❌ Login failed: User with email '${cleanEmail}' not found in database`);
+            return res.status(400).json({ error: 'User does not exist with this email' });
+        }
+
         const match = await bcrypt.compare(password, user.password);
-        if (!match)
-            throw new Error('invalid credential');
+        if (!match) {
+            console.log(`❌ Login failed: Password mismatch for '${emailid}'`);
+            return res.status(400).json({ error: 'Incorrect password' });
+        }
+
         const token = jwt.sign({ _id: user._id, emailid: emailid, role: user.role }, process.env.JWT_KEY, { expiresIn: 7 * 24 * 60 * 60 });
         res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
 
-        // ADD ROLE HERE ↓
         const reply = {
             firstname: user.firstname,
             emailid: user.emailid,
             _id: user._id,
-            role: user.role  // ← THIS IS WHAT'S MISSING!
+            role: user.role
         }
         return res.status(200).json({
             user: reply,
-            message: 'user login succesfully'
+            message: 'User logged in successfully'
         })
 
     }
     catch (err) {
+        console.error('Login error:', err);
         res.status(400).json({ error: err.message || 'Invalid credentials' });
     }
 }
@@ -196,7 +207,98 @@ const deleteprofile = async (req, res) => {
     }
 }
 
+const sendForgotPasswordOtp = async (req, res) => {
+    try {
+        let { emailid } = req.body;
+        if (!emailid) return res.status(400).json({ error: "Email is required" });
+        emailid = emailid.trim().toLowerCase();
 
+        const user = await User.findOne({ emailid });
+        if (!user) {
+            return res.status(404).json({ error: "User does not exist with this email" });
+        }
 
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-module.exports = { register, login, logout, adminregister, deleteprofile, sendOtp, verifyOtp }
+        await OTP.create({
+            email: emailid,
+            otp: otp
+        });
+
+        const title = "Password Reset OTP - Code Arena";
+        const body = `<h1>Reset Password</h1><p>Your OTP for resetting your password is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
+
+        await mailSender(emailid, title, body);
+
+        res.status(200).json({
+            success: true,
+            message: "OTP sent to your email for password reset"
+        });
+    } catch (error) {
+        console.error("Send forgot password OTP error:", error);
+        res.status(400).json({ error: error.message || "Failed to send OTP" });
+    }
+}
+
+const resetPassword = async (req, res) => {
+    try {
+        let { emailid, otp, newPassword } = req.body;
+        if (!emailid || !otp || !newPassword) {
+            return res.status(400).json({ error: "Email, OTP, and new password are required" });
+        }
+
+        emailid = emailid.trim().toLowerCase();
+
+        const user = await User.findOne({ emailid });
+        if (!user) {
+            return res.status(404).json({ error: "User does not exist with this email" });
+        }
+
+        const recentOtp = await OTP.findOne({ email: emailid }).sort({ createdAt: -1 });
+        if (!recentOtp) {
+            return res.status(400).json({ error: "OTP expired or not found" });
+        }
+        if (recentOtp.otp !== otp) {
+            return res.status(400).json({ error: "Invalid OTP" });
+        }
+
+        if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+            return res.status(400).json({ error: "Password must be at least 8 characters with 1 capital letter and 1 number" });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        const token = jwt.sign({ _id: user._id, emailid: emailid, role: user.role }, process.env.JWT_KEY, { expiresIn: 7 * 24 * 60 * 60 });
+        res.cookie('token', token, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+
+        const reply = {
+            firstname: user.firstname,
+            emailid: user.emailid,
+            _id: user._id,
+            role: user.role
+        }
+
+        res.status(200).json({
+            success: true,
+            user: reply,
+            message: "Password reset successfully"
+        });
+    } catch (error) {
+        console.error("Reset password error:", error);
+        res.status(400).json({ error: error.message || "Failed to reset password" });
+    }
+}
+
+module.exports = {
+    login,
+    register,
+    logout,
+    adminregister,
+    deleteprofile,
+    sendOtp,
+    verifyOtp,
+    sendForgotPasswordOtp,
+    resetPassword
+};

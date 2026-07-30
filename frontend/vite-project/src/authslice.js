@@ -38,6 +38,30 @@ export const verifyOtpAction = createAsyncThunk(
   }
 )
 
+export const sendForgotPasswordOtpAction = createAsyncThunk(
+  'auth/sendForgotPasswordOtp',
+  async (emailData, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/user/forgot-password/send-otp', emailData)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message || 'Failed to send OTP')
+    }
+  }
+)
+
+export const resetPasswordAction = createAsyncThunk(
+  'auth/resetPassword',
+  async (resetData, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/user/forgot-password/reset', resetData)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message || 'Failed to reset password')
+    }
+  }
+)
+
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
@@ -130,6 +154,23 @@ const authSlice = createSlice({
         state.message = action.payload.message || 'Registration successful'
       })
       .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
+      
+      // Reset Password
+      .addCase(resetPasswordAction.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(resetPasswordAction.fulfilled, (state, action) => {
+        state.loading = false
+        state.user = action.payload.user
+        state.isAuthenticated = true
+        state.message = action.payload.message || 'Password reset successfully'
+      })
+      .addCase(resetPasswordAction.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })

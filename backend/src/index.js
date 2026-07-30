@@ -1,4 +1,4 @@
-// backend/src/index.js - Trigger restart for MongoDB Atlas IP update
+// backend/src/index.js - Connected to Primary MongoDB Atlas
 const path = require('path');
 
 // Load .env from backend root

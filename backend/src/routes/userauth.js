@@ -1,5 +1,5 @@
 const express=require('express');
-const {login,register,logout, adminregister,deleteprofile, sendOtp, verifyOtp}=require('../controllers/userauthent')
+const {login,register,logout, adminregister,deleteprofile, sendOtp, verifyOtp, sendForgotPasswordOtp, resetPassword}=require('../controllers/userauthent')
 const authrouter=express.Router();
 const {usermiddleware}=require('../middleware/usermiddleware')
 const {adminmiddleware}=require('../middleware/adminmiddleware')
@@ -8,6 +8,8 @@ authrouter.post('/send-otp', sendOtp);
 authrouter.post('/verify-otp', verifyOtp);
 authrouter.post('/register',register);
 authrouter.post('/login',login);
+authrouter.post('/forgot-password/send-otp', sendForgotPasswordOtp);
+authrouter.post('/forgot-password/reset', resetPassword);
 authrouter.post('/logout',usermiddleware,logout);
 authrouter.post('/admin/register',adminmiddleware,adminregister);
 authrouter.post('/deleteprofile',usermiddleware,deleteprofile);

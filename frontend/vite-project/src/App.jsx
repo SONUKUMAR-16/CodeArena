@@ -6,6 +6,7 @@ import Homepage from './pages/Homepage'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import VerifyOtp from './pages/VerifyOtp'
+import ForgotPassword from './pages/ForgotPassword'
 import ProblemDetail from './pages/ProblemDetail'
 import AdminPage from './pages/AdminPage'
 import CreateProblem from './pages/admin/CreateProblem';
@@ -67,6 +68,10 @@ function App() {
       <Route 
         path="/verify-otp" 
         element={!isAuthenticated ? <VerifyOtp/> : <Navigate to='/'/>} 
+      />
+      <Route 
+        path="/forgot-password" 
+        element={!isAuthenticated ? <ForgotPassword/> : <Navigate to='/'/>} 
       />
       {/* Add Chat Page Route */}
       <Route 

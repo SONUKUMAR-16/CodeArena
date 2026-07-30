@@ -85,12 +85,17 @@ function Signup() {
         {/* Error Display */}
         {(error || localError) && (
           <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-300 rounded-lg flex flex-col gap-2 text-sm">
-            <span>{localError || (typeof error === 'string' ? error : JSON.stringify(error))}</span>
+            <span>{localError || (typeof error === 'string' ? error : error?.error || JSON.stringify(error))}</span>
             {((error && (error === "User already exists" || (typeof error === 'string' && error.includes("already exists")))) ||
               (localError && localError.includes("already exists"))) && (
-              <Link to="/login" className="text-sm font-semibold text-white bg-red-600 hover:bg-red-500 py-1.5 px-3 rounded w-fit transition">
-                Go to Login / Forgot Password
-              </Link>
+              <div className="flex flex-wrap gap-2 mt-1">
+                <Link to="/login" className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 py-1.5 px-3 rounded transition">
+                  Go to Login
+                </Link>
+                <Link to="/forgot-password" className="text-xs font-semibold text-white bg-green-600 hover:bg-green-500 py-1.5 px-3 rounded transition">
+                  🔑 Reset Password via OTP
+                </Link>
+              </div>
             )}
           </div>
         )}
