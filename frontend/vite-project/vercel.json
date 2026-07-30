@@ -2,35 +2,35 @@
   "rewrites": [
     {
       "source": "/user/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/user/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/user/:path*"
     },
     {
       "source": "/problem/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/problem/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/problem/:path*"
     },
     {
       "source": "/submit/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/submit/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/submit/:path*"
     },
     {
       "source": "/ai/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/ai/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/ai/:path*"
     },
     {
       "source": "/video/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/video/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/video/:path*"
     },
     {
       "source": "/contest/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/contest/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/contest/:path*"
     },
     {
       "source": "/profile/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/profile/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/profile/:path*"
     },
     {
       "source": "/interview/:path*",
-      "destination": "https://codearena-c6wn116yf-sonukumar240529-7521s-projects.vercel.app/interview/:path*"
+      "destination": "https://codearena-sonukumar240529-7521s-projects.vercel.app/interview/:path*"
     },
     {
       "source": "/(.*)",
