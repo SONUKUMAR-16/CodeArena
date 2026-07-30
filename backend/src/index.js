@@ -1,4 +1,4 @@
-// backend/src/index.js - Connected to Primary Atlas (IP 152.58.31.73)
+// backend/src/index.js - Connected to Primary Atlas (IP 152.58.32.53)
 const path = require('path');
 
 // Load .env from backend root
