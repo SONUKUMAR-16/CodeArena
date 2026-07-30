@@ -31,7 +31,7 @@ async function main() {
         }
     }
 
-    if (!connected) {
+    if (!connected && !process.env.VERCEL) {
         console.log('🚀 Launching In-Memory MongoDB Fallback...');
         try {
             const { MongoMemoryServer } = require('mongodb-memory-server');

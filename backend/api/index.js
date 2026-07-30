@@ -78,4 +78,13 @@ app.use((req, res) => {
     });
 });
 
+// Global Error Handler for Serverless Stability
+app.use((err, req, res, next) => {
+    console.error('❌ Serverless API Error:', err.stack || err.message || err);
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal Server Error',
+        success: false
+    });
+});
+
 module.exports = app;
