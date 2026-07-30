@@ -38,6 +38,10 @@ function Login() {
     dispatch(loginUser(data))
   }
 
+  const isPasswordIncorrect = typeof error === 'string' && 
+    (error.toLowerCase().includes('incorrect password') || error.toLowerCase().includes('incorrect')) && 
+    !error.toLowerCase().includes('does not exist')
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <form
@@ -50,28 +54,8 @@ function Login() {
 
         {/* Error and Message Display */}
         {error && (
-          <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-300 rounded-lg text-sm flex flex-col gap-2">
-            <span>{typeof error === 'string' ? error : error?.error || JSON.stringify(error)}</span>
-            
-            {/* If password is incorrect -> Show Forgot Password button */}
-            {(typeof error === 'string' && (error.toLowerCase().includes('incorrect password') || error.toLowerCase().includes('password'))) && (
-              <Link
-                to="/forgot-password"
-                className="text-xs font-semibold text-white bg-red-700 hover:bg-red-600 py-1.5 px-3 rounded w-fit transition flex items-center gap-1 shadow"
-              >
-                🔑 Forgot Password? Reset via OTP
-              </Link>
-            )}
-
-            {/* If user does not exist -> Show Sign Up button */}
-            {(typeof error === 'string' && (error.toLowerCase().includes('user does not exist') || error.toLowerCase().includes('not exist'))) && (
-              <Link
-                to="/signup"
-                className="text-xs font-semibold text-white bg-green-700 hover:bg-green-600 py-1.5 px-3 rounded w-fit transition flex items-center gap-1 shadow"
-              >
-                ✨ User not found. Create an Account
-              </Link>
-            )}
+          <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-300 rounded-lg text-sm">
+            {typeof error === 'string' ? error : error?.error || JSON.stringify(error)}
           </div>
         )}
 
@@ -100,15 +84,7 @@ function Login() {
 
         {/* Password with Eye Toggle */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-1">
-            <label className="text-gray-400">Password</label>
-            <Link
-              to="/forgot-password"
-              className="text-xs text-green-400 hover:text-green-300 hover:underline transition"
-            >
-              Forgot password?
-            </Link>
-          </div>
+          <label className="block text-gray-400 mb-1">Password</label>
 
           <div className="relative">
             <input
@@ -144,15 +120,27 @@ function Login() {
         >
           {loading ? 'Logging in...' : 'Login'}
         </button>
-        
+
+        {/* Bottom Footer: Sign Up (Left) & Forgot Password (Bottom Right ONLY if password is incorrect) */}
         <div className="flex justify-between items-center text-sm mt-4 text-gray-500">
-          <span>Don't have an account?</span>
-          <Link
-            to="/signup"
-            className="text-green-400 hover:text-green-300 hover:underline transition font-medium"
-          >
-            Sign up
-          </Link>
+          <div>
+            Don't have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-green-400 hover:text-green-300 hover:underline transition font-medium"
+            >
+              Sign up
+            </Link>
+          </div>
+
+          {isPasswordIncorrect && (
+            <Link
+              to="/forgot-password"
+              className="text-xs font-semibold text-red-400 hover:text-red-300 hover:underline transition flex items-center gap-1 bg-red-950/40 border border-red-800/60 py-1 px-2.5 rounded-lg shadow-sm"
+            >
+              🔑 Forgot password?
+            </Link>
+          )}
         </div>
       </form>
     </div>
