@@ -33,21 +33,28 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieparser());
 
-// Ensure MongoDB Atlas Connection
+// Ensure MongoDB Atlas Connection with cached promise
+let dbPromise = null;
+
 const connectDb = async () => {
     if (mongoose.connection.readyState >= 1) return;
-    try {
+    if (!dbPromise) {
         if (!process.env.DATABASESTRING) {
             console.error('❌ DATABASESTRING env variable is missing on Vercel');
             return;
         }
-        await mongoose.connect(process.env.DATABASESTRING, {
-            serverSelectionTimeoutMS: 15000
+        dbPromise = mongoose.connect(process.env.DATABASESTRING, {
+            serverSelectionTimeoutMS: 5000,
+            connectTimeoutMS: 5000
+        }).then((m) => {
+            console.log('✅ Serverless DB connected');
+            return m;
+        }).catch((err) => {
+            dbPromise = null;
+            console.error('❌ Serverless DB connection error:', err.message);
         });
-        console.log('✅ Serverless DB connected');
-    } catch (err) {
-        console.error('❌ Serverless DB connection error:', err.message);
     }
+    await dbPromise;
 };
 
 // Database connection middleware
