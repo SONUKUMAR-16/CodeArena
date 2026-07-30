@@ -82,7 +82,7 @@ const sendOtp = async (req, res) => {
             otp: otp
         });
 
-        const title = "Verification OTP - Leetcode Clone";
+        const title = "Verification OTP - Code Arena";
         const body = `<h1>OTP Verification</h1><p>Your OTP for registration is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
 
         await mailSender(cleanEmail, title, body);

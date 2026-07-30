@@ -29,7 +29,7 @@ const mailSender = async (email, title, body) => {
     console.log('✅ SMTP connection verified');
 
     const info = await transporter.sendMail({
-      from: `"Leetcode Clone" <${process.env.EMAIL_USER}>`,
+      from: `"Code Arena" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: title,
       html: body,
