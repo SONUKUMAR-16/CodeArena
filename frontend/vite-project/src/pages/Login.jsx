@@ -38,9 +38,15 @@ function Login() {
     dispatch(loginUser(data))
   }
 
-  const isPasswordIncorrect = typeof error === 'string' && 
-    (error.toLowerCase().includes('incorrect password') || error.toLowerCase().includes('incorrect')) && 
-    !error.toLowerCase().includes('does not exist')
+  const getErrorMessageStr = (err) => {
+    if (!err) return ""
+    if (typeof err === "string") return err
+    if (typeof err === "object") return err.error || err.message || JSON.stringify(err)
+    return String(err)
+  }
+
+  const errStr = getErrorMessageStr(error).toLowerCase()
+  const isPasswordIncorrect = (errStr.includes('incorrect') || errStr.includes('password') || errStr.includes('invalid credential')) && !errStr.includes('does not exist')
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
