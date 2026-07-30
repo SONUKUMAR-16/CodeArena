@@ -1,5 +1,40 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/user/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/user/:path*"
+    },
+    {
+      "source": "/problem/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/problem/:path*"
+    },
+    {
+      "source": "/submit/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/submit/:path*"
+    },
+    {
+      "source": "/ai/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/ai/:path*"
+    },
+    {
+      "source": "/video/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/video/:path*"
+    },
+    {
+      "source": "/contest/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/contest/:path*"
+    },
+    {
+      "source": "/profile/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/profile/:path*"
+    },
+    {
+      "source": "/interview/:path*",
+      "destination": "https://codearena-dev3hvw34-sonukumar240529-7521s-projects.vercel.app/interview/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
