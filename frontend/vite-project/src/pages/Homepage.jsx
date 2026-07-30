@@ -34,9 +34,10 @@ function Homepage() {
       setLoading(true);
       setError(null);
       const response = await axiosclient.get('/problem/getallproblem/');
-      setProblems(response.data);
+      setProblems(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      setError(err.response?.data || 'Failed to load problems');
+      setProblems([]);
+      setError(err.response?.data?.error || err.response?.data || 'Failed to load problems');
     } finally {
       setLoading(false);
     }
