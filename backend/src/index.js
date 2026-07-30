@@ -155,4 +155,5 @@ const connectfun = async () => {
 
 connectfun();
 
-module.exports = { io };
+module.exports = app;
+module.exports.io = io;
