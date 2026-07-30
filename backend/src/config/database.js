@@ -10,16 +10,28 @@ async function main() {
     console.log('🔍 DATABASESTRING from .env:', process.env.DATABASESTRING);
     const connectionString = process.env.DATABASESTRING;
 
-    try {
-        await mongoose.connect(connectionString, {
-            serverSelectionTimeoutMS: 15000,
-            socketTimeoutMS: 45000,
-        });
-        console.log('✅ Primary MongoDB connected successfully');
-        console.log('📊 Database:', mongoose.connection.name);
-        console.log('📊 Host:', mongoose.connection.host);
-    } catch (error) {
-        console.warn('⚠️ Could not connect to primary MongoDB:', error.message);
+    let connected = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            await mongoose.connect(connectionString, {
+                serverSelectionTimeoutMS: 15000,
+                socketTimeoutMS: 45000,
+            });
+            console.log('✅ Primary MongoDB connected successfully');
+            console.log('📊 Database:', mongoose.connection.name);
+            console.log('📊 Host:', mongoose.connection.host);
+            connected = true;
+            break;
+        } catch (error) {
+            console.warn(`⚠️ Primary MongoDB connect attempt ${attempt} failed: ${error.message}`);
+            if (attempt < 3) {
+                console.log('🔄 Retrying primary MongoDB connection in 2 seconds...');
+                await new Promise(res => setTimeout(res, 2000));
+            }
+        }
+    }
+
+    if (!connected) {
         console.log('🚀 Launching In-Memory MongoDB Fallback...');
         try {
             const { MongoMemoryServer } = require('mongodb-memory-server');
@@ -30,7 +42,6 @@ async function main() {
             console.log('📊 Database:', mongoose.connection.name);
         } catch (memError) {
             console.error('❌ In-Memory MongoDB fallback failed:', memError.message);
-            throw error;
         }
     }
 
