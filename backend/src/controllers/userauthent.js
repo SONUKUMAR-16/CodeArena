@@ -54,23 +54,38 @@ const sendOtp = async (req, res) => {
     try {
         const { emailid } = req.body;
         if (!emailid) throw new Error("Email is required");
+        const cleanEmail = emailid.trim().toLowerCase();
 
-        const user = await User.findOne({ emailid });
+        const user = await User.findOne({
+            $or: [
+                { emailid: cleanEmail },
+                { email: cleanEmail }
+            ]
+        });
         if (user) {
             return res.status(409).json({ error: "User already exists" });
+        }
+
+        // 2-Second Cooldown Check
+        const lastOtp = await OTP.findOne({ email: cleanEmail }).sort({ createdAt: -1 });
+        if (lastOtp) {
+            const diffSeconds = (Date.now() - new Date(lastOtp.createdAt).getTime()) / 1000;
+            if (diffSeconds < 2) {
+                return res.status(429).json({ error: "Please wait at least 2 seconds before requesting another OTP" });
+            }
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await OTP.create({
-            email: emailid,
+            email: cleanEmail,
             otp: otp
         });
 
         const title = "Verification OTP - Leetcode Clone";
         const body = `<h1>OTP Verification</h1><p>Your OTP for registration is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
 
-        await mailSender(emailid, title, body);
+        await mailSender(cleanEmail, title, body);
 
         res.status(200).json({
             success: true,
@@ -232,6 +247,15 @@ const sendForgotPasswordOtp = async (req, res) => {
 
         if (!user) {
             return res.status(404).json({ error: "User does not exist with this email" });
+        }
+
+        // 2-Second Cooldown Check
+        const lastOtp = await OTP.findOne({ email: cleanEmail }).sort({ createdAt: -1 });
+        if (lastOtp) {
+            const diffSeconds = (Date.now() - new Date(lastOtp.createdAt).getTime()) / 1000;
+            if (diffSeconds < 2) {
+                return res.status(429).json({ error: "Please wait at least 2 seconds before requesting another OTP" });
+            }
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();

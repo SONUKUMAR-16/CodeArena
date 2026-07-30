@@ -51,10 +51,15 @@ function Signup() {
   }, [dispatch])
 
   const [localError, setLocalError] = useState("")
+  const [isCooldown, setIsCooldown] = useState(false)
 
   const onSubmit = async (data) => {
-    setLocalError("")
-    dispatch(clearError())
+    if (isCooldown || loading) return;
+    setIsCooldown(true);
+    setTimeout(() => setIsCooldown(false), 2000);
+
+    setLocalError("");
+    dispatch(clearError());
     try {
       sessionStorage.setItem('signup_email', data.emailid);
       sessionStorage.setItem('signup_firstname', data.firstname);
@@ -137,7 +142,7 @@ function Signup() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || isCooldown}
           className="w-full bg-green-500 text-black py-3 rounded-lg font-semibold text-lg hover:bg-green-400 transition-all shadow-md hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
