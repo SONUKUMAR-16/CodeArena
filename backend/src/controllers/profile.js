@@ -9,13 +9,16 @@ const getProfile = async (req, res) => {
         
         // Check if username is provided
         if (req.params.username) {
-            // Try to find by firstname
-            user = await User.findOne({ firstname: req.params.username });
-            
-            // If not found, try by email
-            if (!user) {
-                user = await User.findOne({ emailid: req.params.username });
-            }
+            const escaped = req.params.username.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+            const regex = new RegExp(`^${escaped}$`, 'i');
+            user = await User.findOne({
+                $or: [
+                    { firstname: req.params.username },
+                    { firstname: regex },
+                    { emailid: req.params.username },
+                    { emailid: regex }
+                ]
+            });
         } else {
             // Use current user
             user = await User.findById(req.user._id);

@@ -21,6 +21,9 @@ profileRouter.get('/test/:username', async (req, res) => {
     }
 });
 
+// Get profile statistics
+profileRouter.get('/stats', usermiddleware, getProfileStats);
+
 // Get current user's profile
 profileRouter.get('/me', usermiddleware, (req, res, next) => {
     req.params.username = req.user.firstname;
@@ -29,8 +32,5 @@ profileRouter.get('/me', usermiddleware, (req, res, next) => {
 
 // Get profile by username
 profileRouter.get('/:username', usermiddleware, getProfile);
-
-// Get profile statistics
-profileRouter.get('/stats', usermiddleware, getProfileStats);
 
 module.exports = profileRouter;
