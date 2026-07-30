@@ -22,10 +22,10 @@ app.use((req, res, next) => {
   }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization, Cookie');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(200).send('OK');
   }
   next();
 });
