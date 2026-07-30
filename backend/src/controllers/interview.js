@@ -1,14 +1,15 @@
 // controllers/interview.js
 const Interview = require('../models/interview');
 const User = require('../models/user');
-const { GoogleGenAI } = require("@google/genai");
-
-// Validate API key
-if (!process.env.AI_KEY) {
-  console.error('❌ AI_KEY is not set in environment variables');
+let ai = null;
+try {
+  const { GoogleGenAI } = require("@google/genai");
+  if (process.env.AI_KEY) {
+    ai = new GoogleGenAI({ apiKey: process.env.AI_KEY });
+  }
+} catch (e) {
+  console.log("⚠️ GoogleGenAI init warning:", e.message);
 }
-
-const ai = new GoogleGenAI({ apiKey: process.env.AI_KEY });
 
 // ==================== INTERVIEW MANAGEMENT ====================
 

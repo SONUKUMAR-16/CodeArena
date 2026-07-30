@@ -1,7 +1,3 @@
-const { GoogleGenAI } = require("@google/genai");
-const dotenv = require("dotenv");
-dotenv.config();
-
 const solvedoubt = async (req, res) => {
     // --- Keep the validation and setup logic ---
     const { message, title, description, testcases, startcode } = req.body;
@@ -10,6 +6,13 @@ const solvedoubt = async (req, res) => {
     }
     if (!process.env.AI_KEY) {
         return res.status(500).json({ success: false, message: "API key not set" });
+    }
+
+    let GoogleGenAI;
+    try {
+        GoogleGenAI = require("@google/genai").GoogleGenAI;
+    } catch (e) {
+        return res.status(500).json({ success: false, message: "AI module unavailable" });
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.AI_KEY });
