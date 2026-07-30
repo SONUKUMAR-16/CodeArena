@@ -74,6 +74,16 @@ function Signup() {
     }
   }
 
+  const getErrorMessageStr = (err) => {
+    if (!err) return ""
+    if (typeof err === "string") return err
+    if (typeof err === "object") return err.error || err.message || JSON.stringify(err)
+    return String(err)
+  }
+
+  const errDisplayMsg = localError || getErrorMessageStr(error)
+  const isUserAlreadyExists = errDisplayMsg.toLowerCase().includes("already exists")
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900 px-4">
       <form
@@ -88,11 +98,10 @@ function Signup() {
         </p>
 
         {/* Error Display */}
-        {(error || localError) && (
+        {errDisplayMsg && (
           <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-300 rounded-lg flex flex-col gap-2 text-sm">
-            <span>{localError || (typeof error === 'string' ? error : error?.error || JSON.stringify(error))}</span>
-            {((error && (error === "User already exists" || (typeof error === 'string' && error.includes("already exists")))) ||
-              (localError && localError.includes("already exists"))) && (
+            <span>{errDisplayMsg}</span>
+            {isUserAlreadyExists && (
               <div className="flex flex-wrap gap-2 mt-1">
                 <Link to="/login" className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 py-1.5 px-3 rounded transition">
                   Go to Login
