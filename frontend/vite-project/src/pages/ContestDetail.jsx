@@ -69,7 +69,7 @@ function ContestDetail() {
 
   // STEP 8: Socket.IO Real-time Leaderboard Updates
   useEffect(() => {
-    const rawUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://code-arena-7y79-i7nmrwrce-sonukumar240529-7521s-projects.vercel.app');
+    const rawUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://code-arena-7y79.vercel.app');
     const backendUrl = rawUrl.replace(/\/$/, '');
 
     let socket = null;
