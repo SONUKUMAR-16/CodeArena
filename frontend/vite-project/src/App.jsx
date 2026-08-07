@@ -17,7 +17,6 @@ import AdminUpload from './pages/admin/AdminUpload'
 import Contests from './pages/Contests';
 import ContestDetail from './pages/ContestDetail';
 import CreateContest from './pages/CreateContest';
-import Visualizer from './pages/Visualizer'
 import Profile from './pages/Profile'
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -79,7 +78,6 @@ function App() {
       <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
       <Route path="/contests" element={<ProtectedRoute><Contests /></ProtectedRoute>} />
       <Route path="/contest/:id" element={<ProtectedRoute><ContestDetail /></ProtectedRoute>} />
-      <Route path="/visualizer" element={<ProtectedRoute><Visualizer /></ProtectedRoute>} />
       <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
       {/* Admin Routes */}

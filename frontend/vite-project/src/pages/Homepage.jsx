@@ -84,7 +84,6 @@ function Homepage() {
 
   const navItems = [
     { icon: <Trophy className="w-4 h-4" />, label: 'Contests', path: '/contests', color: 'bg-yellow-600 hover:bg-yellow-700' },
-    { icon: <GitBranch className="w-4 h-4" />, label: 'Visualizer', path: '/visualizer', color: 'bg-green-600 hover:bg-green-700' },
     { icon: <History className="w-4 h-4" />, label: 'Submissions', path: '/submissions', color: 'bg-blue-600 hover:bg-blue-700' },
   ];
 
