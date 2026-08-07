@@ -71,7 +71,6 @@ const chatting = require('../src/routes/chatai');
 const videoRouter = require('../src/routes/videocreator');
 const contestRouter = require('../src/routes/contest');
 const profileRouter = require('../src/routes/profile');
-const interviewRouter = require('../src/routes/interview');
 
 app.get('/', (req, res) => {
     res.json({
@@ -87,7 +86,6 @@ app.use('/ai', chatting);
 app.use('/video', videoRouter);
 app.use('/contest', contestRouter);
 app.use('/profile', profileRouter);
-app.use('/interview', interviewRouter);
 
 // 404 handler
 app.use((req, res) => {

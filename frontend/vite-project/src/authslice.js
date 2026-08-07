@@ -115,7 +115,7 @@ export const deleteProfile = createAsyncThunk(
 const initialState = {
   user: null,
   isAuthenticated: false,
-  loading: false,
+  loading: true,
   error: null,
   message: null
 }

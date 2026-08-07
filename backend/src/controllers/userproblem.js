@@ -2,17 +2,17 @@ const { getlanguagebyid, submitbatch ,submittoken} = require("../utils/problemut
 const Problem = require("../models/problem");
 const User = require("../models/user");
 const Submission = require('../models/submission');
+const mongoose = require('mongoose');
 
 // controllers/userproblem.js - Update createproblem function
 // controllers/userproblem.js - Update createproblem
 
 const createproblem = async (req, res) => {
-    const { title, description, visibletestcases, hiddentestcases, startcode, referencesolution, problemcreator } = req.body;
-    // Removed 'tags' from destructuring
+    const { title, description, difficulty, visibletestcases, hiddentestcases, startcode, referencesolution, problemcreator } = req.body;
     
     try {
         // Validate required fields
-        if (!title || !description  || !visibletestcases || !hiddentestcases || !startcode) {
+        if (!title || !description || !visibletestcases || !hiddentestcases || !startcode) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
@@ -133,9 +133,9 @@ const getfullproblembyid = async (req, res) => {
     try {  
         console.log('getfullproblembyid called with ID:', id);
         
-        if (!id) {
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ 
-                error: "Missing id parameter",
+                error: "Invalid or missing id parameter",
                 success: false 
             });
         }
@@ -230,6 +230,7 @@ const updateproblem = async (req, res) => {
         const {
             title,
             description,
+            difficulty,
             visibletestcases,
             hiddentestcases,
             startcode,
@@ -328,8 +329,8 @@ const deleteproblem = async(req, res) => {
 const getproblembyid = async(req, res) => {
     const {id} = req.params;
     try {  
-        if (!id) {
-            return res.status(400).send("Missing id parameter");    
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).send("Invalid or missing id parameter");    
         }
         
         const problem = await Problem.findById(id).select('_id title description difficulty tags visibletestcases startcode');

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { createContest } from '../contestSlice';
 import axiosclient from '../utilis/axiosclient';
-import { ArrowLeft, Plus, X, Clock, Users, Calendar, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, X, Clock, Users, Calendar, Eye, EyeOff, Trophy } from 'lucide-react';
 
 function CreateContest() {
   const navigate = useNavigate();

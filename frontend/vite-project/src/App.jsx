@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useEffect } from 'react'
 import { checkAuth } from './authslice'
@@ -12,28 +12,17 @@ import AdminPage from './pages/AdminPage'
 import CreateProblem from './pages/admin/CreateProblem';
 import UpdateProblem from './pages/admin/UpdateProblem';
 import SubmissionsPage from './pages/SubmissionsPage';
-import ChatPage from './pages/ChatPage'; // Import the ChatPage
+import ChatPage from './pages/ChatPage';
 import AdminUpload from './pages/admin/AdminUpload'
 import Contests from './pages/Contests';
 import ContestDetail from './pages/ContestDetail';
 import CreateContest from './pages/CreateContest';
-import Interviews from './pages/Interviews';
-import InterviewSelect from './pages/InterviewSelect';
-import AIInterview from './components/AIInterview';
 import Visualizer from './pages/Visualizer'
 import Profile from './pages/Profile'
 
-
-function App() {
+function ProtectedRoute({ children, adminOnly = false }) {
   const { isAuthenticated, loading, user } = useSelector((state) => state.auth)
-  const dispatch = useDispatch()
-  
-  useEffect(() => {
-    dispatch(checkAuth())
-  }, [dispatch])
-
-  // Check if user is admin
-  const isAdmin = user?.role === 'admin'
+  const location = useLocation()
 
   if (loading) {
     return (
@@ -43,129 +32,71 @@ function App() {
     )
   }
 
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (adminOnly && user?.role !== 'admin') {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
+function PublicOnlyRoute({ children }) {
+  const { isAuthenticated, loading } = useSelector((state) => state.auth)
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    )
+  }
+
+  if (isAuthenticated) {
+    const from = location.state?.from?.pathname || '/'
+    return <Navigate to={from} replace />
+  }
+
+  return children
+}
+
+function App() {
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+    dispatch(checkAuth())
+  }, [dispatch])
+
   return (
     <Routes>
-      <Route 
-        path="/" 
-        element={isAuthenticated ? <Homepage/> : <Navigate to='/login'/>} 
-      />
-      <Route 
-        path="/homepage" 
-        element={isAuthenticated ? <Homepage/> : <Navigate to='/login'/>}
-      />
-      <Route 
-        path="/problem/:id" 
-        element={isAuthenticated ? <ProblemDetail/> : <Navigate to='/login'/>}
-      />
-      <Route 
-        path="/login" 
-        element={!isAuthenticated ? <Login/> : <Navigate to='/'/>} 
-      />
-      <Route 
-        path="/signup" 
-        element={!isAuthenticated ? <Signup/> : <Navigate to='/'/>} 
-      />
-      <Route 
-        path="/verify-otp" 
-        element={!isAuthenticated ? <VerifyOtp/> : <Navigate to='/'/>} 
-      />
-      <Route 
-        path="/forgot-password" 
-        element={!isAuthenticated ? <ForgotPassword/> : <Navigate to='/'/>} 
-      />
-      {/* Add Chat Page Route */}
-      <Route 
-        path="/chat/:id" 
-        element={isAuthenticated ? <ChatPage/> : <Navigate to='/login'/>}
-      />
-      {/* Admin Route - Only accessible to authenticated admins */}
-      <Route 
-        path="/admin" 
-        element={
-          isAuthenticated && isAdmin ? 
-            <AdminPage/> : 
-            isAuthenticated ? 
-              <Navigate to='/'/> : 
-              <Navigate to='/login'/>
-        } 
-      />
-      <Route 
-        path="/admin/create" 
-        element={
-          isAuthenticated && isAdmin ? 
-            <CreateProblem/> : 
-            isAuthenticated ? 
-              <Navigate to='/'/> : 
-              <Navigate to='/login'/>
-        } 
-      />
-      
-      <Route 
-        path="/admin/update/:id" 
-        element={
-          isAuthenticated && isAdmin ? 
-            <UpdateProblem/> : 
-            isAuthenticated ? 
-              <Navigate to='/'/> : 
-              <Navigate to='/login'/>
-        } 
-      />
-      <Route 
-        path="/admin/upload/:problemId" 
-        element={
-          isAuthenticated && isAdmin ? 
-            <AdminUpload/> : 
-            isAuthenticated ? 
-              <Navigate to='/'/> : 
-              <Navigate to='/login'/>
-        } 
-      />
-      <Route 
-        path="/submissions" 
-          element={isAuthenticated ? <SubmissionsPage /> : <Navigate to='/login'/>} />
-      <Route 
-        path="/contests" 
-        element={isAuthenticated ? <Contests/> : <Navigate to='/login'/>} 
-      />
-      <Route 
-        path="/contest/:id" 
-        element={isAuthenticated ? <ContestDetail/> : <Navigate to='/login'/>} 
-      />
-      <Route 
-        path="/contest/create" 
-        element={
-          isAuthenticated && isAdmin ? 
-            <CreateContest/> : 
-            isAuthenticated ? 
-              <Navigate to='/'/> : 
-              <Navigate to='/login'/>
-        } 
-      />
-      <Route 
-        path="/interviews" 
-        element={isAuthenticated ? <Interviews/> : <Navigate to='/login'/>} 
-      />
-      <Route 
-        path="/interview/select" 
-        element={isAuthenticated ? <InterviewSelect/> : <Navigate to='/login'/>} 
-      />
-      <Route 
-        path="/interview/:id" 
-        element={isAuthenticated ? <AIInterview/> : <Navigate to='/login'/>} 
-      />
-      <Route 
-        path="/visualizer" 
-        element={isAuthenticated ? <Visualizer/> : <Navigate to='/login'/>} 
-      />
-      <Route 
-        path="/profile/:username?" 
-        element={isAuthenticated ? <Profile/> : <Navigate to='/login'/>} 
-      />
-      {/* Catch-all route - must be last */}
-      <Route 
-        path="*" 
-        element={<Navigate to={isAuthenticated ? '/' : '/login'}/>} 
-      />
+      <Route path="/" element={<ProtectedRoute><Homepage /></ProtectedRoute>} />
+      <Route path="/homepage" element={<ProtectedRoute><Homepage /></ProtectedRoute>} />
+      <Route path="/problem/:id" element={<ProtectedRoute><ProblemDetail /></ProtectedRoute>} />
+      <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+      <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+      <Route path="/contests" element={<ProtectedRoute><Contests /></ProtectedRoute>} />
+      <Route path="/contest/:id" element={<ProtectedRoute><ContestDetail /></ProtectedRoute>} />
+      <Route path="/visualizer" element={<ProtectedRoute><Visualizer /></ProtectedRoute>} />
+      <Route path="/profile/:username?" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+      {/* Admin Routes */}
+      <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
+      <Route path="/admin/create" element={<ProtectedRoute adminOnly><CreateProblem /></ProtectedRoute>} />
+      <Route path="/admin/update/:id" element={<ProtectedRoute adminOnly><UpdateProblem /></ProtectedRoute>} />
+      <Route path="/admin/upload/:problemId" element={<ProtectedRoute adminOnly><AdminUpload /></ProtectedRoute>} />
+      <Route path="/contest/create" element={<ProtectedRoute adminOnly><CreateContest /></ProtectedRoute>} />
+
+      {/* Public / Auth Routes */}
+      <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+      <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+      <Route path="/verify-otp" element={<PublicOnlyRoute><VerifyOtp /></PublicOnlyRoute>} />
+      <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPassword /></PublicOnlyRoute>} />
+
+      {/* Catch-all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

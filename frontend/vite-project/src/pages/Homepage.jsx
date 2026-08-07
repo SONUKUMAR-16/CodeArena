@@ -5,7 +5,7 @@ import { logoutUser } from '../authslice';
 import { useNavigate } from 'react-router-dom';
 import axiosclient from '../utilis/axiosclient';
 import { 
-  History, Trophy, Mic, GitBranch, 
+  History, Trophy, GitBranch, 
   Home, User as UserIcon, LogOut, Shield, Code2,
   Search, RefreshCw, Sparkles,
   Calendar, Award, Users, Activity
@@ -83,7 +83,6 @@ function Homepage() {
   };
 
   const navItems = [
-    { icon: <Mic className="w-4 h-4" />, label: 'AI Interview', path: '/interviews', color: 'bg-purple-600 hover:bg-purple-700' },
     { icon: <Trophy className="w-4 h-4" />, label: 'Contests', path: '/contests', color: 'bg-yellow-600 hover:bg-yellow-700' },
     { icon: <GitBranch className="w-4 h-4" />, label: 'Visualizer', path: '/visualizer', color: 'bg-green-600 hover:bg-green-700' },
     { icon: <History className="w-4 h-4" />, label: 'Submissions', path: '/submissions', color: 'bg-blue-600 hover:bg-blue-700' },

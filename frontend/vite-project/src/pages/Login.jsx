@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import { loginUser } from "../authslice"
 import { useDispatch, useSelector } from "react-redux"
 
@@ -25,14 +25,16 @@ function Login() {
 
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const dispatch = useDispatch()
   const { isAuthenticated, loading, error, message } = useSelector((state) => state.auth)
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/')
+      const from = location.state?.from?.pathname || '/'
+      navigate(from, { replace: true })
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, location])
 
   const onSubmit = (data) => {
     dispatch(loginUser(data))

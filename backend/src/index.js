@@ -37,7 +37,6 @@ const chatting = require('./routes/chatai');
 const videoRouter = require('./routes/videocreator');
 const contestRouter = require('./routes/contest');
 const profileRouter = require('./routes/profile');
-const interviewRouter = require('./routes/interview');
 
 const rateLimiter = require('./middleware/ratelimiter');
 const redisclient = require('./config/redis');
@@ -63,8 +62,7 @@ app.get('/', (req, res) => {
             ai: '/ai',
             video: '/video',
             contest: '/contest',
-            profile: '/profile',
-            interview: '/interview'
+            profile: '/profile'
         },
         status: 'healthy'
     });
@@ -87,7 +85,6 @@ app.use('/ai', chatting);
 app.use('/video', videoRouter);
 app.use('/contest', contestRouter);
 app.use('/profile', profileRouter);
-app.use('/interview', interviewRouter);
 
 // 404 handler
 app.use((req, res) => {

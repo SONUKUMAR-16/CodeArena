@@ -610,9 +610,6 @@ int main() {
                 <span className={`px-2 py-0.5 rounded-full text-xs border ${getTagColor(problem.tags)}`}>
                   {problem.tags}
                 </span>
-                <span className="text-gray-400 text-xs">
-                  ID: {problem._id?.substring(0, 6)}
-                </span>
               </div>
             </div>
             
@@ -808,11 +805,8 @@ int main() {
                     )}
                   </div>
                 )}
-                
-               // In the editorial tab section where video is displayed (around line 370-450)
-// Replace the video display section with this corrected version:
 
-{activeTab === 'editorial' && (
+                {activeTab === 'editorial' && (
   <div className="h-full">
     {/* Video Solution in Editorial Tab */}
     {loadingVideo ? (

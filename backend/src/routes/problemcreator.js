@@ -9,11 +9,12 @@ problemrouter.patch('/update/:id',adminmiddleware,updateproblem);
 problemrouter.delete('/delete/:id',adminmiddleware,deleteproblem);
 problemrouter.get('/admin/getfullproblem/:id', adminmiddleware, getfullproblembyid);
 
-problemrouter.get('/problembyid/:id',getproblembyid);
 problemrouter.get('/getallproblem/',getallproblem);
 problemrouter.get('/user',usermiddleware,solvedallproblembyuser);
 problemrouter.get('/submittedproblem/:pid',usermiddleware,submittedproblem);
 problemrouter.get('/submissions/all', usermiddleware, getUserSubmissions);
 
+problemrouter.get('/problembyid/:id',getproblembyid);
+problemrouter.get('/:id',getproblembyid);
 
 module.exports=problemrouter;

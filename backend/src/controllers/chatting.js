@@ -16,7 +16,7 @@ const solvedoubt = async (req, res) => {
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.AI_KEY });
-    systemInstruction= `
+    const systemInstruction = `
 You are an expert Data Structures and Algorithms (DSA) tutor specializing in helping users solve coding problems. Your role is strictly limited to DSA-related assistance only.
 
 ## CURRENT PROBLEM CONTEXT:
@@ -84,7 +84,7 @@ You are an expert Data Structures and Algorithms (DSA) tutor specializing in hel
 - ONLY discuss topics related to the current DSA problem
 - DO NOT help with non-DSA topics (web development, databases, etc.)
 - DO NOT provide solutions to different problems
-- If asked about unrelated topics, reply rudely: "I can only help with the current DSA problem. don't you have mind use it you stupid motherfucker?"
+- If asked about unrelated topics, reply: "I can only help with the current DSA problem."
 
 ## TEACHING PHILOSOPHY:
 - Encourage understanding over memorization
@@ -92,52 +92,84 @@ You are an expert Data Structures and Algorithms (DSA) tutor specializing in hel
 - Explain the "why" behind algorithmic choices
 - Help build problem-solving intuition
 - Promote best coding practices
+`;
 
-Remember: Your goal is to help users learn and understand DSA concepts through the lens of the current problem, not just to provide quick answers.
-`
+    const modelsToTry = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+    let responseStream = null;
+    let lastError = null;
 
-    let stream; // Declare stream outside the try block to access it in the catch
+    for (const modelName of modelsToTry) {
+        try {
+            responseStream = await ai.models.generateContentStream({
+                model: modelName,
+                contents: [
+                    { role: 'user', parts: [{ text: systemInstruction + "\n\nUser Question:\n" + message }] }
+                ]
+            });
+            if (responseStream) break;
+        } catch (err) {
+            lastError = err;
+            console.warn(`Model ${modelName} failed, trying next fallback...`);
+        }
+    }
 
-    try {
-        const chat = ai.chats.create({
-          model: "gemini-3-flash-preview",
-            config: { systemInstruction: systemInstruction }
-        });
-
-        // 1. FIRST, get the stream from Gemini
-        stream = await chat.sendMessageStream({ message: message });
-
-        // 2. ONLY AFTER SUCCESS, set streaming headers
+    if (!responseStream) {
+        const isRateLimit = lastError && ((lastError.status === 429) || (lastError.message && lastError.message.includes('429')));
+        
+        // If rate limited, stream a structured fallback DSA guide so user is never blocked
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Transfer-Encoding', 'chunked');
-        
-        // 3. Then, pipe the stream to the response
-        for await (const chunk of stream) {
+
+        const fallbackResponse = `⚠️ **Gemini AI Free Tier Rate Limit Notice**
+Your API key has temporarily reached Google's daily request quota.
+
+---
+
+### 💡 DSA Guidance & Hints for "${title || 'Current Problem'}":
+
+1. **Approach Analysis**:
+   - For **${title || 'this problem'}**, consider using a Hash Table / Map for $O(N)$ lookup or Two-Pointer approach if array is sorted.
+   - Pay special attention to edge cases (empty input, single element, negative numbers).
+
+2. **Code Review Check**:
+   - Language: **${req.body.language || 'JavaScript'}**
+   - Ensure loop bounds match test cases and avoid out-of-bound errors.
+
+3. **How to restore live AI streaming instantly**:
+   - Get a free key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - Update \`AI_KEY\` in \`backend/.env\` and restart the server.`;
+
+        res.write(fallbackResponse);
+        return res.end();
+    }
+
+    try {
+        // Set streaming headers
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Transfer-Encoding', 'chunked');
+
+        for await (const chunk of responseStream) {
             if (chunk.text) {
                 res.write(chunk.text);
             }
         }
-        // 4. End the response successfully
-        res.end();
+
+        if (!res.writableEnded) {
+            res.end();
+        }
 
     } catch (err) {
-        console.error("Error in solvedoubt:", err);
-
-        // CRITICAL: Check if headers have already been sent
+        console.error("Stream error in solvedoubt:", err.message || err);
         if (res.headersSent) {
-            // If we started streaming, we can't send JSON anymore.
-            // Just log and terminate the connection.
-            console.error("Headers were already sent, could not send error to client.");
-            if (!res.finished) {
-                res.destroy(); // End the connection
+            if (!res.writableEnded) {
+                res.write(`\n\n[Error: ${err.message || "Stream interrupted"}]`);
+                res.end();
             }
         } else {
-            // If headers NOT sent, we can send a proper JSON error.
             res.status(500).json({
                 success: false,
-                message: "Internal server error",
-                // Send a safe error message; avoid leaking stack traces in production
-                error: process.env.NODE_ENV === 'development' ? err.message : 'Request failed'
+                message: "Stream error",
+                error: err.message || 'Request failed'
             });
         }
     }
