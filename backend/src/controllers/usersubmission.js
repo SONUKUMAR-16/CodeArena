@@ -237,17 +237,25 @@ const runcode = async (req, res) => {
         const tokens = result.map((value) => value.token);
         const outputs = await submittoken(tokens);
         
-        // Process outputs to show simple errors
+        // Process outputs to show simple errors & output matching
         const simplifiedOutputs = outputs.map((output, index) => {
-            const simpleError = getSimpleErrorMessage(output.status_id, output.status?.description);
+            const testcase = problem.visibletestcases[index];
+            const actualStdout = (output.stdout || '').trim();
+            const expectedOutput = (testcase?.output || '').trim();
+            const statusId = output.status_id;
+
+            const isPassed = statusId === 3 || (statusId <= 3 && actualStdout === expectedOutput && actualStdout !== '');
+            const simpleError = isPassed ? 'Passed' : getSimpleErrorMessage(statusId, output.status?.description);
             
             return {
-                status_id: output.status_id,
-                status: output.status,
-                status_description: simpleError, // Use simple description
-                stdout: output.stdout,
-                stderr: output.stderr,
-                compile_output: output.compile_output,
+                status_id: isPassed ? 3 : statusId,
+                status: isPassed ? { id: 3, description: 'Accepted' } : output.status,
+                status_description: simpleError,
+                stdin: testcase?.input || '',
+                expected_output: expectedOutput,
+                stdout: actualStdout,
+                stderr: output.stderr ? output.stderr.trim() : null,
+                compile_output: output.compile_output ? output.compile_output.trim() : null,
                 time: output.time,
                 memory: output.memory,
                 test_case: index + 1

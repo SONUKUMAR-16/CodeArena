@@ -216,6 +216,12 @@ function VerifyOtp() {
               We sent a 6-digit code to <span className="text-green-400 font-medium">{email}</span>
             </p>
 
+            {message && (
+              <div className="bg-blue-900/30 border border-blue-600/50 text-blue-300 p-3 rounded-lg text-xs font-mono mb-4 text-center">
+                {message}
+              </div>
+            )}
+
             {/* Error display */}
             {(error || localError) && (
               <div className="mb-4 p-3 bg-red-900/50 border border-red-700 text-red-300 rounded-lg text-sm">

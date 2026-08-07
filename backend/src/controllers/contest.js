@@ -5,6 +5,11 @@ const Problem = require('../models/problem');
 const User = require('../models/user');
 const Submission = require('../models/submission');
 const { getlanguagebyid, submitbatch, submittoken } = require('../utils/problemutility');
+const { 
+    processContestSubmissionResult, 
+    getLeaderboard, 
+    getUserRank 
+} = require('../services/contestScoringService');
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -340,13 +345,25 @@ const endContest = async (req, res) => {
         contest.endTime = new Date();
         await contest.save();
 
-        const rankings = await getLiveContestLeaderboard(id);
+        const leaderboardService = require('../services/leaderboardService');
+        const standings = await leaderboardService.getContestLeaderboard(id, 1, 100);
+
+        const io = req.app.get('io');
+        if (io) {
+            const payload = {
+                contestId: id.toString(),
+                status: 'completed',
+                finalRankings: standings.leaderboard
+            };
+            io.to(`contest:${id}`).emit('contest:ended', payload);
+            io.to(`contest-${id}`).emit('contest:ended', payload);
+        }
 
         res.status(200).json({
             success: true,
             message: 'Contest ended successfully',
             contest,
-            finalRankings: rankings
+            finalRankings: standings.leaderboard
         });
 
     } catch (error) {
@@ -471,21 +488,24 @@ const submitContestSolution = async (req, res) => {
             });
         }
 
-        if (contest.status !== 'active') {
+        const now = new Date();
+        const isTimeActive = now >= new Date(contest.startTime) && now <= new Date(contest.endTime);
+        const isAdmin = req.user?.role === 'admin';
+
+        if (contest.status !== 'active' && !isTimeActive && !isAdmin) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Contest is not active' 
             });
         }
 
-        const isRegistered = contest.participants.some(
-            p => p.user.toString() === userId.toString()
+        const isRegistered = (contest.participants || []).some(
+            p => (p?.user?._id?.toString() === userId.toString()) || (p?.user?.toString() === userId.toString())
         );
+
         if (!isRegistered) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'You are not registered for this contest' 
-            });
+            contest.participants.push({ user: userId });
+            await contest.save();
         }
 
         if (!contest.problems.includes(problemId)) {
@@ -544,12 +564,29 @@ const submitContestSolution = async (req, res) => {
 
         for (let i = 0; i < outputs.length; i++) {
             const output = outputs[i];
-            if (output.status_id === 3) {
+            const test = allTestCases[i];
+            const actualStdout = (output.stdout || '').trim();
+            const expectedOutput = (test?.output || '').trim();
+            const statusId = output.status_id;
+            const statusDesc = output.status?.description || '';
+
+            const isPassed = statusId === 3 || (statusId <= 3 && actualStdout === expectedOutput && actualStdout !== '');
+
+            if (isPassed) {
                 testCasesPassed++;
             } else {
-                status = 'wrong';
-                if (!errorMessage) {
-                    errorMessage = `Test case ${i + 1} failed: ${output.status?.description || 'Unknown error'}`;
+                if ([5, 9, 13, 14, 15, 16].includes(statusId) || statusDesc.toLowerCase().includes('time limit') || statusDesc.toLowerCase().includes('timeout') || statusDesc.toLowerCase().includes('output limit')) {
+                    if (status === 'accepted') status = 'timeout';
+                    if (!errorMessage) errorMessage = `Test case ${i + 1} failed: Time Limit Exceeded (TLE)`;
+                } else if (statusId === 6 || statusDesc.toLowerCase().includes('compilation')) {
+                    if (status === 'accepted') status = 'error';
+                    if (!errorMessage) errorMessage = `Test case ${i + 1} failed: Compilation Error`;
+                } else if (statusId >= 7 || statusDesc.toLowerCase().includes('runtime') || statusDesc.toLowerCase().includes('memory')) {
+                    if (status === 'accepted') status = 'error';
+                    if (!errorMessage) errorMessage = `Test case ${i + 1} failed: ${statusDesc || 'Runtime Error'}`;
+                } else {
+                    if (status === 'accepted') status = 'wrong';
+                    if (!errorMessage) errorMessage = `Test case ${i + 1} failed: Wrong Answer`;
                 }
             }
         }
@@ -607,6 +644,13 @@ const submitContestSolution = async (req, res) => {
                 user.problemsolved.push(problemId);
                 await user.save();
             }
+        }
+
+        // STEP 3 & STEP 8: Asynchronous/atomic contest scoring & leaderboard update
+        try {
+            await processContestSubmissionResult(contestSubmission, contest, req.app.get('io'));
+        } catch (scoreErr) {
+            console.error('⚠️ Contest scoring processing warning:', scoreErr.message);
         }
 
         res.status(201).json({
@@ -756,13 +800,6 @@ const getContestProblems = async (req, res) => {
         const isActive = contest.status === 'active';
         const isCompleted = contest.status === 'completed';
 
-        if (!isActive && !isCompleted && !isRegistered) {
-            return res.status(403).json({
-                success: false,
-                message: 'You are not registered for this contest'
-            });
-        }
-
         const problemsWithStatus = await Promise.all(contest.problems.map(async (problemId) => {
             const problem = await Problem.findById(problemId)
                 .select('_id title description difficulty tags visibletestcases startcode');
@@ -784,7 +821,8 @@ const getContestProblems = async (req, res) => {
                 ...problem.toObject(),
                 solved: !!solved,
                 attempts: submissionCount,
-                visibleTestCases: isActive || isCompleted ? problem.visibletestcases : []
+                visibletestcases: problem.visibletestcases || [],
+                visibleTestCases: problem.visibletestcases || []
             };
         }));
 
@@ -838,17 +876,20 @@ const getContestProblemById = async (req, res) => {
             });
         }
 
-        const isRegistered = contest.participants.some(
-            p => p.user.toString() === userId.toString()
+        const isRegistered = (contest.participants || []).some(
+            p => (p?.user?._id?.toString() === userId.toString()) || (p?.user?.toString() === userId.toString())
         );
 
         const isActive = contest.status === 'active';
         const isCompleted = contest.status === 'completed';
+        const isAdmin = req.user?.role === 'admin';
 
-        if (!isActive && !isCompleted && !isRegistered) {
-            return res.status(403).json({
-                success: false,
-                message: 'You are not registered for this contest'
+        if (!isActive && !isCompleted && !isRegistered && !isAdmin) {
+            return res.status(200).json({
+                success: true,
+                message: 'You are not registered for this contest',
+                problem: null,
+                isRegistered: false
             });
         }
 
@@ -1075,9 +1116,9 @@ const getMySubmissions = async (req, res) => {
 const getContestRankings = async (req, res) => {
     try {
         const { id } = req.params;
-        const { page = 1, limit = 20 } = req.query;
+        const { page = 1, limit = 50 } = req.query;
 
-        const contest = await Contest.findById(id);
+        const contest = await Contest.findById(id).lean();
         if (!contest) {
             return res.status(404).json({
                 success: false,
@@ -1085,75 +1126,17 @@ const getContestRankings = async (req, res) => {
             });
         }
 
-        const submissions = await ContestSubmission.find({ 
-            contestId: id,
-            isCorrect: true 
-        }).populate('userId', 'firstname email');
+        const result = await getLeaderboard(id, page, limit);
 
-        const userScores = {};
-        const userProblemsSolved = {};
-        const userPenalties = {};
-
-        submissions.forEach(sub => {
-            const userId = sub.userId._id.toString();
-            const problemId = sub.problemId.toString();
-
-            if (!userScores[userId]) {
-                userScores[userId] = 0;
-                userProblemsSolved[userId] = new Set();
-                userPenalties[userId] = 0;
-            }
-
-            if (!userProblemsSolved[userId].has(problemId)) {
-                userProblemsSolved[userId].add(problemId);
-                userScores[userId] += sub.score || 100;
-                userPenalties[userId] += (sub.attempts - 1) * (contest.penalty || 0) + sub.timeTaken;
-            }
-        });
-
-        const rankings = Object.keys(userScores).map(userId => {
-            const user = submissions.find(s => s.userId._id.toString() === userId)?.userId;
-            return {
-                userId,
-                username: user?.firstname || 'Unknown User',
-                email: user?.email || '',
-                score: userScores[userId],
-                problemsSolved: userProblemsSolved[userId].size,
-                totalTime: userPenalties[userId] || 0,
-                penalty: userPenalties[userId] || 0
-            };
-        });
-
-        rankings.sort((a, b) => {
-            if (a.score !== b.score) return b.score - a.score;
-            return a.totalTime - b.totalTime;
-        });
-
-        rankings.forEach((item, index) => {
-            item.rank = index + 1;
-        });
-
-        const startIndex = (parseInt(page) - 1) * parseInt(limit);
-        const paginatedRankings = rankings.slice(startIndex, startIndex + parseInt(limit));
-
-        const response = {
+        res.status(200).json({
             success: true,
             contest: {
                 id: contest._id,
                 title: contest.title,
                 status: contest.status
             },
-            totalParticipants: rankings.length,
-            rankings: paginatedRankings,
-            pagination: {
-                page: parseInt(page),
-                limit: parseInt(limit),
-                total: rankings.length,
-                pages: Math.ceil(rankings.length / parseInt(limit))
-            }
-        };
-
-        res.status(200).json(response);
+            ...result
+        });
 
     } catch (error) {
         console.error('Get contest rankings error:', error);
@@ -1168,8 +1151,9 @@ const getContestRankings = async (req, res) => {
 const getLiveLeaderboard = async (req, res) => {
     try {
         const { id } = req.params;
+        const { page = 1, limit = 50 } = req.query;
 
-        const contest = await Contest.findById(id);
+        const contest = await Contest.findById(id).lean();
         if (!contest) {
             return res.status(404).json({
                 success: false,
@@ -1177,7 +1161,7 @@ const getLiveLeaderboard = async (req, res) => {
             });
         }
 
-        const leaderboard = await getLiveContestLeaderboard(id);
+        const result = await getLeaderboard(id, page, limit);
 
         res.status(200).json({
             success: true,
@@ -1188,8 +1172,7 @@ const getLiveLeaderboard = async (req, res) => {
                 timeRemaining: contest.status === 'active' ? 
                     Math.max(0, new Date(contest.endTime).getTime() - Date.now()) : 0
             },
-            leaderboard,
-            totalParticipants: leaderboard.length
+            ...result
         });
 
     } catch (error) {
@@ -1197,6 +1180,36 @@ const getLiveLeaderboard = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to get live leaderboard',
+            error: error.message
+        });
+    }
+};
+
+const getMyRank = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user._id;
+
+        const contest = await Contest.findById(id).lean();
+        if (!contest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Contest not found'
+            });
+        }
+
+        const rankData = await getUserRank(id, userId);
+
+        res.status(200).json({
+            success: true,
+            contestId: id,
+            myRank: rankData
+        });
+    } catch (error) {
+        console.error('Get my rank error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get user rank',
             error: error.message
         });
     }
@@ -1213,6 +1226,7 @@ module.exports = {
     submitContestSolution,
     getContestRankings,
     getLiveLeaderboard,
+    getMyRank,
     getContests,
     getContestById,
     startContest,

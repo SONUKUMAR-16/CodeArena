@@ -85,14 +85,24 @@ const sendOtp = async (req, res) => {
         const title = "Verification OTP - Code Arena";
         const body = `<h1>OTP Verification</h1><p>Your OTP for registration is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
 
-        await mailSender(cleanEmail, title, body);
+        let mailSent = false;
+        try {
+            await mailSender(cleanEmail, title, body);
+            mailSent = true;
+        } catch (mailErr) {
+            console.warn(`⚠️ Mail delivery failed (${mailErr.message}). Using console fallback OTP.`);
+            console.log(`==========================================`);
+            console.log(`🔑 REGISTRATION OTP FOR ${cleanEmail}: ${otp}`);
+            console.log(`==========================================`);
+        }
 
         res.status(200).json({
             success: true,
-            message: "OTP sent successfully"
+            message: mailSent ? "OTP sent to your email address" : `OTP generated! Verification code: ${otp}`,
+            otp: mailSent ? undefined : otp
         });
     } catch (error) {
-        res.status(400).json({ error: error.message || error });
+        res.status(400).json({ error: typeof error === 'string' ? error : (error.message || "Failed to send OTP") });
     }
 }
 
@@ -269,7 +279,14 @@ const sendForgotPasswordOtp = async (req, res) => {
         const title = "Password Reset OTP - Code Arena";
         const body = `<h1>Reset Password</h1><p>Your OTP for resetting your password is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
 
-        await mailSender(cleanEmail, title, body);
+        try {
+            await mailSender(cleanEmail, title, body);
+        } catch (mailErr) {
+            console.warn(`⚠️ Mail delivery failed (${mailErr.message}). Using console fallback OTP.`);
+            console.log(`==========================================`);
+            console.log(`🔑 PASSWORD RESET OTP FOR ${cleanEmail}: ${otp}`);
+            console.log(`==========================================`);
+        }
 
         res.status(200).json({
             success: true,

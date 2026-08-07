@@ -6,17 +6,20 @@ const contestSubmissionSchema = new Schema({
     contestId: {
         type: Schema.Types.ObjectId,
         ref: 'Contest',
-        required: true
+        required: true,
+        index: true
     },
     problemId: {
         type: Schema.Types.ObjectId,
         ref: 'problem',
-        required: true
+        required: true,
+        index: true
     },
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'user',
-        required: true
+        required: true,
+        index: true
     },
     submissionId: {
         type: Schema.Types.ObjectId,
@@ -34,7 +37,8 @@ const contestSubmissionSchema = new Schema({
     status: {
         type: String,
         enum: ['pending', 'accepted', 'wrong', 'error', 'timeout'],
-        default: 'pending'
+        default: 'pending',
+        index: true
     },
     score: {
         type: Number,
@@ -50,11 +54,13 @@ const contestSubmissionSchema = new Schema({
     },
     isCorrect: {
         type: Boolean,
-        default: false
+        default: false,
+        index: true
     },
     submittedAt: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        index: true
     },
     testCasesPassed: {
         type: Number,
@@ -66,10 +72,12 @@ const contestSubmissionSchema = new Schema({
     }
 });
 
-// Compound indexes for ranking queries
+// STEP 6: Optimized MongoDB Indexes
 contestSubmissionSchema.index({ contestId: 1, userId: 1, problemId: 1 });
 contestSubmissionSchema.index({ contestId: 1, userId: 1, isCorrect: 1 });
+contestSubmissionSchema.index({ contestId: 1, problemId: 1, status: 1 });
 contestSubmissionSchema.index({ contestId: 1, status: 1, timeTaken: 1 });
+contestSubmissionSchema.index({ contestId: 1, submittedAt: -1 });
 
 const ContestSubmission = mongoose.model('ContestSubmission', contestSubmissionSchema);
 module.exports = ContestSubmission;

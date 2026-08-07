@@ -24,6 +24,7 @@ const io = socketIo(server, {
         credentials: true
     }
 });
+app.set('io', io);
 
 const main = require('./config/database');
 const cookieparser = require('cookie-parser');
@@ -98,23 +99,38 @@ app.use((req, res) => {
 io.on('connection', (socket) => {
     console.log('Client Connected:', socket.id);
 
+    // Section 3: Room format contest:{contestId} and event joinContest
+    socket.on('joinContest', (data) => {
+        const cId = typeof data === 'object' ? data.contestId : data;
+        if (cId) {
+            socket.join(`contest:${cId}`);
+            socket.join(`contest-${cId}`);
+            console.log(`Socket ${socket.id} joined room contest:${cId}`);
+        }
+    });
+
     socket.on('join-contest', (contestId) => {
-        socket.join(`contest-${contestId}`);
-        console.log(`${socket.id} joined contest ${contestId}`);
+        if (contestId) {
+            socket.join(`contest:${contestId}`);
+            socket.join(`contest-${contestId}`);
+            console.log(`Socket ${socket.id} joined room contest-${contestId}`);
+        }
+    });
+
+    socket.on('leaveContest', (data) => {
+        const cId = typeof data === 'object' ? data.contestId : data;
+        if (cId) {
+            socket.leave(`contest:${cId}`);
+            socket.leave(`contest-${cId}`);
+            console.log(`Socket ${socket.id} left room contest:${cId}`);
+        }
     });
 
     socket.on('leave-contest', (contestId) => {
-        socket.leave(`contest-${contestId}`);
-        console.log(`${socket.id} left contest ${contestId}`);
-    });
-
-    socket.on('update-leaderboard', async (contestId) => {
-        try {
-            const { getLiveContestLeaderboard } = require('./controllers/contest');
-            const leaderboard = await getLiveContestLeaderboard(contestId);
-            io.to(`contest-${contestId}`).emit('leaderboard-update', leaderboard);
-        } catch (err) {
-            console.error(err);
+        if (contestId) {
+            socket.leave(`contest:${contestId}`);
+            socket.leave(`contest-${contestId}`);
+            console.log(`Socket ${socket.id} left room contest-${contestId}`);
         }
     });
 

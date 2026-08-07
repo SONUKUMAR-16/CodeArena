@@ -12,6 +12,7 @@ const {
     submitContestSolution,
     getContestRankings,
     getLiveLeaderboard,
+    getMyRank,
     getContests,
     getContestById,
     startContest,
@@ -29,14 +30,16 @@ contestRouter.post('/create', adminmiddleware, createContest);
 contestRouter.get('/', usermiddleware, getContests);
 contestRouter.get('/:id', usermiddleware, getContestById);
 
-// Contest problems (hidden participants)
+// Contest problems
 contestRouter.get('/:id/problems', usermiddleware, getContestProblems);
 contestRouter.get('/:id/problem/:problemId', usermiddleware, getContestProblemById);
 
-// Standings
+// STEP 5 & 6: Optimized Leaderboard & Standings APIs
 contestRouter.get('/:id/standings', usermiddleware, getContestStandings);
 contestRouter.get('/:id/rankings', usermiddleware, getContestRankings);
 contestRouter.get('/:id/leaderboard', usermiddleware, getLiveLeaderboard);
+contestRouter.get('/:id/my-rank', usermiddleware, getMyRank);
+contestRouter.get('/:id/rank', usermiddleware, getMyRank);
 
 // My submissions
 contestRouter.get('/:id/my-submissions', usermiddleware, getMySubmissions);
