@@ -91,7 +91,7 @@ function ForgotPassword() {
       setLocalSuccess("OTP sent to your email! Please enter it below.")
     } catch (err) {
       console.error("Send forgot password OTP failed:", err)
-      const msg = typeof err === 'string' ? err : err?.error || err?.message || 'Failed to send OTP'
+      const msg = typeof err === 'string' ? err : err?.error || err?.message || (typeof err === 'object' && Object.keys(err).length ? JSON.stringify(err) : 'Failed to send OTP')
       setLocalError(msg)
     }
   }

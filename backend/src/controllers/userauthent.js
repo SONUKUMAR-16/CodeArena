@@ -279,8 +279,10 @@ const sendForgotPasswordOtp = async (req, res) => {
         const title = "Password Reset OTP - Code Arena";
         const body = `<h1>Reset Password</h1><p>Your OTP for resetting your password is: <strong>${otp}</strong>. It is valid for 5 minutes.</p>`;
 
+        let mailSent = false;
         try {
             await mailSender(cleanEmail, title, body);
+            mailSent = true;
         } catch (mailErr) {
             console.warn(`⚠️ Mail delivery failed (${mailErr.message}). Using console fallback OTP.`);
             console.log(`==========================================`);
@@ -290,11 +292,12 @@ const sendForgotPasswordOtp = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "OTP sent to your email for password reset"
+            message: mailSent ? "OTP sent to your email for password reset" : `OTP generated! Verification code: ${otp}`,
+            otp: mailSent ? undefined : otp
         });
     } catch (error) {
         console.error("Send forgot password OTP error:", error);
-        res.status(400).json({ error: error.message || "Failed to send OTP" });
+        res.status(400).json({ error: typeof error === 'string' ? error : (error.message || "Failed to send OTP") });
     }
 }
 
