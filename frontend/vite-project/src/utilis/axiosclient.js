@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+const baseURL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://code-arena-7y79-i7nmrwrce-sonukumar240529-7521s-projects.vercel.app');
+
 const axiosclient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://codearena-sonukumar240529-7521s-projects.vercel.app'),
+  baseURL: baseURL.replace(/\/$/, ''),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'

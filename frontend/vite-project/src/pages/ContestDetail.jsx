@@ -69,30 +69,38 @@ function ContestDetail() {
 
   // STEP 8: Socket.IO Real-time Leaderboard Updates
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
-    const socket = io(backendUrl, { withCredentials: true });
-    socketRef.current = socket;
+    const rawUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://code-arena-7y79-i7nmrwrce-sonukumar240529-7521s-projects.vercel.app');
+    const backendUrl = rawUrl.replace(/\/$/, '');
 
-    socket.emit('joinContest', { contestId: id });
-    socket.emit('join-contest', id);
+    let socket = null;
+    try {
+      socket = io(backendUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+      socketRef.current = socket;
 
-    socket.on('leaderboard:update', (data) => {
-      if (data.contestId === id) {
-        fetchLeaderboard(page);
-        fetchMyRank();
-      }
-    });
+      socket.on('connect_error', () => {
+        // Silent fallback to HTTP polling if Socket serverless connection is unavailable
+      });
 
-    socket.on('score-update', (payload) => {
-      if (payload.contestId === id) {
-        fetchLeaderboard(page);
-        fetchMyRank();
-      }
-    });
+      socket.emit('joinContest', { contestId: id });
+      socket.emit('join-contest', id);
 
-    socket.on('contest:ended', (payload) => {
-      if (payload.contestId === id) {
-        setIsContestActive(false);
+      socket.on('leaderboard:update', (data) => {
+        if (data.contestId === id) {
+          fetchLeaderboard(page);
+          fetchMyRank();
+        }
+      });
+
+      socket.on('score-update', (payload) => {
+        if (payload.contestId === id) {
+          fetchLeaderboard(page);
+          fetchMyRank();
+        }
+      });
+
+      socket.on('contest:ended', (payload) => {
+        if (payload.contestId === id) {
+          setIsContestActive(false);
         setIsContestCompleted(true);
         setTimeRemaining('Contest ended');
         fetchLeaderboard(1);
@@ -101,10 +109,15 @@ function ContestDetail() {
     });
 
     return () => {
-      socket.emit('leaveContest', { contestId: id });
-      socket.emit('leave-contest', id);
-      socket.disconnect();
+      if (socket) {
+        socket.emit('leaveContest', { contestId: id });
+        socket.emit('leave-contest', id);
+        socket.disconnect();
+      }
     };
+    } catch (e) {
+      console.warn('Socket init error:', e);
+    }
   }, [id, page]);
 
   // Set code when problem changes
